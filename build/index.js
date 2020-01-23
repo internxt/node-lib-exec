@@ -18,6 +18,7 @@ var Environment = /** @class */ (function () {
         var os = process.platform;
         var pathExec = 'binaries/storj-' + os + '-' + process.arch;
         pathExec = 'binaries/storj-' + os + '-x32';
+        pathExec = path_1.default.join(__dirname, '..', pathExec);
         if (os === 'win32') {
             pathExec += '.exe';
         }

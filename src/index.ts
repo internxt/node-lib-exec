@@ -79,6 +79,7 @@ class Environment {
         const os = process.platform
         let pathExec = 'binaries/storj-' + os + '-' + process.arch
         pathExec = 'binaries/storj-' + os + '-x32'
+        pathExec = path.join(__dirname, '..', pathExec)
         if (os === 'win32') { pathExec += '.exe' }
         return pathExec
     }
