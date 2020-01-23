@@ -1,5 +1,6 @@
 
-import fs, { read } from 'fs'
+import fs from 'fs'
+import path from 'path'
 import { execFile, spawn } from 'child_process';
 import readline from 'readline'
 
@@ -11,7 +12,7 @@ interface EnvironmentOptions {
 }
 
 interface UploadProgressCallback {
-    (progress: Number, uploadedBytes: Number, totalBytes: Number): void
+    (progress: Number | string, uploadedBytes: Number | null, totalBytes: Number | null): void
 }
 
 interface DownloadProgressCallback {
@@ -19,10 +20,10 @@ interface DownloadProgressCallback {
 }
 
 interface UploadFinishedCallback {
-    (err: Error, newFileId: string): void
+    (err: Error | null, newFileId: string | null): void
 }
 
-interface DownloadFinishedCallback {
+interface OnlyErrorCallback {
     (err: Error | null): void
 }
 
@@ -34,7 +35,7 @@ interface StoreFileOptions {
 
 interface ResolveFileOptions {
     progressCallback: DownloadProgressCallback,
-    finishedCallback: DownloadFinishedCallback,
+    finishedCallback: OnlyErrorCallback,
     overwritte?: boolean
 }
 
@@ -46,8 +47,21 @@ interface BucketFormat {
     bucketName: string
 }
 
+interface FileFormat {
+    fileId: string,
+    size: Number,
+    decrypted: boolean,
+    type: string,
+    created: Date,
+    name: string
+}
+
 interface ListBucketsCallback {
     (err: Error | null, bucketList: BucketFormat[]): void
+}
+
+interface ListFilesCallback {
+    (err: Error | null, filesList: FileFormat[]): void
 }
 
 class Environment {
@@ -79,11 +93,58 @@ class Environment {
     }
 
     storeFile(bucketId: string, filePath: string, options: StoreFileOptions) {
-        execFile(this.getExe(), {
+
+        if (!path.isAbsolute(filePath)) {
+            return options.finishedCallback(new Error('Path must be absolute'), null)
+        }
+
+        if (!fs.existsSync(filePath)) {
+            return options.finishedCallback(new Error('Cannot upload file: Doesn\'t exists'), null)
+        }
+
+
+        // Spawn child process, call to .EXE
+        const storjExe = spawn(this.getExe(), ["upload-file", bucketId, filePath], {
             env: {
-                STORJ_BRIDGE: this.config.bridgeUrl
+                STORJ_BRIDGE: this.config.bridgeUrl,
+                STORJ_BRIDGE_USER: this.config.bridgeUser,
+                STORJ_BRIDGE_PASS: this.config.bridgePass,
+                STORJ_ENCRYPTION_KEY: this.config.encryptionKey
             }
         })
+
+        // Pipe the stdout steam to a readline interface
+        const rl = readline.createInterface(storjExe.stdout)
+
+        // Output results
+        let result: string | null = null
+        let error: Error | null = null
+
+        // Possible outputs
+        const uploadFailurePattern = /^Upload failure\:\s+(.*)/
+        const progressPattern = /^\[={0,}>\s+\]\s+(\d+\.\d+)%$/
+
+        // Process each line of output
+        rl.on('line', (ln) => {
+            const uploadFailure = uploadFailurePattern.exec(ln)
+            if (uploadFailure) {
+                error = new Error(uploadFailure[1])
+                return rl.close()
+            }
+
+            const isProgress = progressPattern.exec(ln)
+            if (isProgress) {
+                if (typeof (options.progressCallback) == 'function') {
+                    options.progressCallback(isProgress[1], null, null)
+                }
+            }
+        })
+
+        // Manage closed stream
+        rl.on('close', () => {
+            options.finishedCallback(error, result)
+        })
+
     }
 
     resolveFile(bucketId: string, fileId: string, filePath: string, options: ResolveFileOptions) {
@@ -111,10 +172,9 @@ class Environment {
         let error: Error | null = null
 
         rl.on('line', (ln) => {
-            console.log('Line: ', ln)
             const isProgress = progressPattern.exec(ln)
             if (isProgress) {
-                if (typeof(options.progressCallback) == 'function') {
+                if (typeof (options.progressCallback) == 'function') {
                     options.progressCallback(isProgress[1], null, null)
                 }
             } else if (ln == 'Download Success!') {
@@ -167,6 +227,95 @@ class Environment {
             if (typeof (callback) == 'function') {
                 callback(error, results)
             }
+        })
+
+    }
+
+    listFiles(bucketId: string, callback: ListFilesCallback) {
+        // Spawn child process, call to .EXE
+        const storjExe = spawn(this.getExe(), ["list-files", bucketId], {
+            env: {
+                STORJ_BRIDGE: this.config.bridgeUrl,
+                STORJ_BRIDGE_USER: this.config.bridgeUser,
+                STORJ_BRIDGE_PASS: this.config.bridgePass,
+                STORJ_ENCRYPTION_KEY: this.config.encryptionKey
+            }
+        })
+
+        // Pipe the stdout steam to a readline interface
+        const rl = readline.createInterface(storjExe.stdout)
+
+        // Output results
+        let results: FileFormat[] = []
+        let error: Error | null = null
+
+        const pattern = /^ID: ([a-z0-9]{24})\s+Size:\s+(\d+) bytes\s+Decrypted: (true|false)\s+Type:\s+(.*)\s+Created: (.*Z)\s+Name: (.*)$/
+        const nonExists = /^Bucket id .* does not exist$/
+
+        rl.on('line', (ln) => {
+            const errorExists = nonExists.exec(ln)
+            if (errorExists) {
+                error = new Error(ln)
+                return rl.close()
+            }
+
+            const isFile = pattern.exec(ln)
+            if (isFile) {
+                const file: FileFormat = {
+                    fileId: isFile[1],
+                    size: parseInt(isFile[2]),
+                    decrypted: isFile[3] === 'true',
+                    type: isFile[4],
+                    created: new Date(isFile[5]),
+                    name: isFile[6]
+                }
+                return results.push(file)
+
+            }
+
+            console.log('List files=>', ln)
+        })
+
+        rl.on('close', () => {
+            callback(error, results)
+        })
+
+    }
+
+    removeFile(bucketId: string, fileId: string, callback: OnlyErrorCallback) {
+        const storjExe = spawn(this.getExe(), ["remove-file", bucketId, fileId], {
+            env: {
+                STORJ_BRIDGE: this.config.bridgeUrl,
+                STORJ_BRIDGE_USER: this.config.bridgeUser,
+                STORJ_BRIDGE_PASS: this.config.bridgePass,
+                STORJ_ENCRYPTION_KEY: this.config.encryptionKey
+            }
+        })
+
+        const rl = readline.createInterface(storjExe.stdout)
+
+        let error: Error | null = null
+
+        const removeSuccessPattern = /^File was successfully removed from bucket\.$/
+        const removeErrorPattern = /^Failed to remove file from bucket.*/
+
+        rl.on('line', (ln) => {
+            const removeError = removeErrorPattern.exec(ln)
+
+            if (removeError) {
+                error = new Error(removeError[0])
+                return rl.close()
+            }
+            const removeSuccess = removeSuccessPattern.exec(ln)
+
+            if (removeSuccess) {
+                return rl.close();
+            }
+            console.log(ln)
+        })
+
+        rl.on('close', () => {
+            callback(error)
         })
 
     }

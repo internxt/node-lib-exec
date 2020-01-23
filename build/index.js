@@ -4,6 +4,7 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
 };
 Object.defineProperty(exports, "__esModule", { value: true });
 var fs_1 = __importDefault(require("fs"));
+var path_1 = __importDefault(require("path"));
 var child_process_1 = require("child_process");
 var readline_1 = __importDefault(require("readline"));
 var Environment = /** @class */ (function () {
@@ -30,10 +31,46 @@ var Environment = /** @class */ (function () {
         return x;
     };
     Environment.prototype.storeFile = function (bucketId, filePath, options) {
-        child_process_1.execFile(this.getExe(), {
+        if (!path_1.default.isAbsolute(filePath)) {
+            return options.finishedCallback(new Error('Path must be absolute'), null);
+        }
+        if (!fs_1.default.existsSync(filePath)) {
+            return options.finishedCallback(new Error('Cannot upload file: Doesn\'t exists'), null);
+        }
+        // Spawn child process, call to .EXE
+        var storjExe = child_process_1.spawn(this.getExe(), ["upload-file", bucketId, filePath], {
             env: {
-                STORJ_BRIDGE: this.config.bridgeUrl
+                STORJ_BRIDGE: this.config.bridgeUrl,
+                STORJ_BRIDGE_USER: this.config.bridgeUser,
+                STORJ_BRIDGE_PASS: this.config.bridgePass,
+                STORJ_ENCRYPTION_KEY: this.config.encryptionKey
             }
+        });
+        // Pipe the stdout steam to a readline interface
+        var rl = readline_1.default.createInterface(storjExe.stdout);
+        // Output results
+        var result = null;
+        var error = null;
+        // Possible outputs
+        var uploadFailurePattern = /^Upload failure\:\s+(.*)/;
+        var progressPattern = /^\[={0,}>\s+\]\s+(\d+\.\d+)%$/;
+        // Process each line of output
+        rl.on('line', function (ln) {
+            var uploadFailure = uploadFailurePattern.exec(ln);
+            if (uploadFailure) {
+                error = new Error(uploadFailure[1]);
+                return rl.close();
+            }
+            var isProgress = progressPattern.exec(ln);
+            if (isProgress) {
+                if (typeof (options.progressCallback) == 'function') {
+                    options.progressCallback(isProgress[1], null, null);
+                }
+            }
+        });
+        // Manage closed stream
+        rl.on('close', function () {
+            options.finishedCallback(error, result);
         });
     };
     Environment.prototype.resolveFile = function (bucketId, fileId, filePath, options) {
@@ -57,7 +94,6 @@ var Environment = /** @class */ (function () {
         var progressPattern = /^\[={0,}>\s+\]\s+(\d+\.\d+)%$/;
         var error = null;
         rl.on('line', function (ln) {
-            console.log('Line: ', ln);
             var isProgress = progressPattern.exec(ln);
             if (isProgress) {
                 if (typeof (options.progressCallback) == 'function') {
@@ -107,7 +143,76 @@ var Environment = /** @class */ (function () {
             }
         });
     };
+    Environment.prototype.listFiles = function (bucketId, callback) {
+        // Spawn child process, call to .EXE
+        var storjExe = child_process_1.spawn(this.getExe(), ["list-files", bucketId], {
+            env: {
+                STORJ_BRIDGE: this.config.bridgeUrl,
+                STORJ_BRIDGE_USER: this.config.bridgeUser,
+                STORJ_BRIDGE_PASS: this.config.bridgePass,
+                STORJ_ENCRYPTION_KEY: this.config.encryptionKey
+            }
+        });
+        // Pipe the stdout steam to a readline interface
+        var rl = readline_1.default.createInterface(storjExe.stdout);
+        // Output results
+        var results = [];
+        var error = null;
+        var pattern = /^ID: ([a-z0-9]{24})\s+Size:\s+(\d+) bytes\s+Decrypted: (true|false)\s+Type:\s+(.*)\s+Created: (.*Z)\s+Name: (.*)$/;
+        var nonExists = /^Bucket id .* does not exist$/;
+        rl.on('line', function (ln) {
+            var errorExists = nonExists.exec(ln);
+            if (errorExists) {
+                error = new Error(ln);
+                return rl.close();
+            }
+            var isFile = pattern.exec(ln);
+            if (isFile) {
+                var file = {
+                    fileId: isFile[1],
+                    size: parseInt(isFile[2]),
+                    decrypted: isFile[3] === 'true',
+                    type: isFile[4],
+                    created: new Date(isFile[5]),
+                    name: isFile[6]
+                };
+                return results.push(file);
+            }
+            console.log('List files=>', ln);
+        });
+        rl.on('close', function () {
+            callback(error, results);
+        });
+    };
+    Environment.prototype.removeFile = function (bucketId, fileId, callback) {
+        var storjExe = child_process_1.spawn(this.getExe(), ["remove-file", bucketId, fileId], {
+            env: {
+                STORJ_BRIDGE: this.config.bridgeUrl,
+                STORJ_BRIDGE_USER: this.config.bridgeUser,
+                STORJ_BRIDGE_PASS: this.config.bridgePass,
+                STORJ_ENCRYPTION_KEY: this.config.encryptionKey
+            }
+        });
+        var rl = readline_1.default.createInterface(storjExe.stdout);
+        var error = null;
+        var removeSuccessPattern = /^File was successfully removed from bucket\.$/;
+        var removeErrorPattern = /^Failed to remove file from bucket.*/;
+        rl.on('line', function (ln) {
+            var removeError = removeErrorPattern.exec(ln);
+            if (removeError) {
+                error = new Error(removeError[0]);
+                return rl.close();
+            }
+            var removeSuccess = removeSuccessPattern.exec(ln);
+            if (removeSuccess) {
+                return rl.close();
+            }
+            console.log(ln);
+        });
+        rl.on('close', function () {
+            callback(error);
+        });
+    };
     return Environment;
 }());
 exports.Environment = Environment;
-//# sourceMappingURL=index.js.map
