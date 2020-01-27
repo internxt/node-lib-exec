@@ -26,7 +26,7 @@ describe('# constructor', () => {
     it('should create dummy file if not exists', function (done) {
         if (fs.existsSync("pruebas.bin")) { done() }
         else {
-            const dummyFile = "http://ipv4.download.thinkbroadband.com/10MB.zip"
+            const dummyFile = "http://ipv4.download.thinkbroadband.com/5MB.zip"
             const file = fs.createWriteStream("pruebas.bin");
             const request = http.get(dummyFile, function (response) {
                 response.pipe(file);
@@ -73,13 +73,14 @@ describe('# constructor', () => {
         this.timeout(300000)
         const absolutePath = path.resolve('pruebas.bin')
         storj.storeFile(bucketId, absolutePath, {
-            finishedCallback: (err) => {
+            finishedCallback: (err, fileId) => {
                 expect(err).to.be.null
+                expect(fileId).to.match(/^[a-z0-9]{24}$/)
                 done(err)
             }
         })
     })
-    /*
+    
     it('should download file', function (done) {
         this.timeout(300000)
 
@@ -93,6 +94,6 @@ describe('# constructor', () => {
             overwritte: true
         })
     })
-    */
+    
 
 })

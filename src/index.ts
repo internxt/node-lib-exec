@@ -124,6 +124,7 @@ class Environment {
         // Possible outputs
         const uploadFailurePattern = /^Upload failure\:\s+(.*)/
         const progressPattern = /^\[={0,}>\s+\]\s+(\d+\.\d+)%$/
+        const uploadSuccessPattern = /^Upload Success! File ID: ([a-z0-9]{24})$/
 
         // Process each line of output
         rl.on('line', (ln) => {
@@ -131,6 +132,11 @@ class Environment {
             if (uploadFailure) {
                 error = new Error(uploadFailure[1])
                 return rl.close()
+            }
+
+            const uploadSuccess = uploadSuccessPattern.exec(ln)
+            if (uploadSuccess) {
+                result = uploadSuccess[1]
             }
 
             const isProgress = progressPattern.exec(ln)

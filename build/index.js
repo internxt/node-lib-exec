@@ -55,12 +55,17 @@ var Environment = /** @class */ (function () {
         // Possible outputs
         var uploadFailurePattern = /^Upload failure\:\s+(.*)/;
         var progressPattern = /^\[={0,}>\s+\]\s+(\d+\.\d+)%$/;
+        var uploadSuccessPattern = /^Upload Success! File ID: ([a-z0-9]{24})$/;
         // Process each line of output
         rl.on('line', function (ln) {
             var uploadFailure = uploadFailurePattern.exec(ln);
             if (uploadFailure) {
                 error = new Error(uploadFailure[1]);
                 return rl.close();
+            }
+            var uploadSuccess = uploadSuccessPattern.exec(ln);
+            if (uploadSuccess) {
+                result = uploadSuccess[1];
             }
             var isProgress = progressPattern.exec(ln);
             if (isProgress) {
