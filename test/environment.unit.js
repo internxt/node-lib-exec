@@ -24,8 +24,9 @@ describe('# constructor', () => {
     })
 
     it('should create dummy file if not exists', function (done) {
-        if (fs.existsSync("pruebas.bin")) { done() }
+        if (fs.existsSync("pruebas.bin") && fs.statSync("pruebas.bin").size !== 0) { done() }
         else {
+            if (fs.existsSync("pruebas.bin")) { fs.unlinkSync("pruebas.bin") }
             const dummyFile = "http://ipv4.download.thinkbroadband.com/5MB.zip"
             const file = fs.createWriteStream("pruebas.bin");
             const request = http.get(dummyFile, function (response) {
@@ -80,7 +81,7 @@ describe('# constructor', () => {
             }
         })
     })
-    
+
     it('should download file', function (done) {
         this.timeout(300000)
 
@@ -88,12 +89,10 @@ describe('# constructor', () => {
             finishedCallback: (err) => {
                 done(err)
             },
-            progressCallback: (progress) => {
-                // console.log(progress)
-            },
+            progressCallback: (progress) => { /* do nothing */ },
             overwritte: true
         })
     })
-    
+
 
 })

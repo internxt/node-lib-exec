@@ -141,7 +141,7 @@ class Environment {
 
             const isProgress = progressPattern.exec(ln)
             if (isProgress) {
-                if (typeof (options.progressCallback) == 'function') {
+                if (typeof (options.progressCallback) === 'function') {
                     options.progressCallback(isProgress[1], null, null)
                 }
             }
