@@ -54,7 +54,7 @@ var Environment = /** @class */ (function () {
         var error = null;
         // Possible outputs
         var uploadFailurePattern = /^Upload failure\:\s+(.*)/;
-        var progressPattern = /^\[={0,}>\s+\]\s+(\d+\.\d+)%$/;
+        var progressPattern = /^\[={0,}>?\s*\]\s+(\d+\.\d+)%$/;
         var uploadSuccessPattern = /^Upload Success! File ID: ([a-z0-9]{24})$/;
         // Process each line of output
         rl.on('line', function (ln) {
@@ -69,8 +69,9 @@ var Environment = /** @class */ (function () {
             }
             var isProgress = progressPattern.exec(ln);
             if (isProgress) {
+                var progressPercentage = parseFloat(isProgress[1]) / 100;
                 if (typeof (options.progressCallback) === 'function') {
-                    options.progressCallback(isProgress[1], null, null);
+                    options.progressCallback(progressPercentage, null, null);
                 }
             }
         });
@@ -97,17 +98,24 @@ var Environment = /** @class */ (function () {
             }
         });
         var rl = readline_1.default.createInterface(storjExe.stdout);
-        var progressPattern = /^\[={0,}>\s+\]\s+(\d+\.\d+)%$/;
+        // Output results
         var error = null;
+        // Possible outputs
+        var progressPattern = /^\[={0,}>?\s*\]\s+(\d+\.\d+)%$/;
+        var downloadFailurePattern = /^Download failure: (.*)$/;
         rl.on('line', function (ln) {
+            var downloadFailure = downloadFailurePattern.exec(ln);
+            if (downloadFailure) {
+                error = new Error(downloadFailure[1]);
+                return rl.close();
+            }
             var isProgress = progressPattern.exec(ln);
             if (isProgress) {
-                if (typeof (options.progressCallback) == 'function') {
-                    options.progressCallback(isProgress[1], null, null);
+                var progressPercentage = parseFloat(isProgress[1]) / 100;
+                if (typeof (options.progressCallback) === 'function') {
+                    options.progressCallback(progressPercentage, null, null);
                 }
-            }
-            else if (ln == 'Download Success!') {
-                rl.close();
+                return;
             }
         });
         rl.on('close', function () {
@@ -144,7 +152,7 @@ var Environment = /** @class */ (function () {
             }
         });
         rl.on('close', function () {
-            if (typeof (callback) == 'function') {
+            if (typeof (callback) === 'function') {
                 callback(error, results);
             }
         });
@@ -175,7 +183,7 @@ var Environment = /** @class */ (function () {
             var isFile = pattern.exec(ln);
             if (isFile) {
                 var file = {
-                    fileId: isFile[1],
+                    id: isFile[1],
                     size: parseInt(isFile[2]),
                     decrypted: isFile[3] === 'true',
                     type: isFile[4],

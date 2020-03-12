@@ -12,11 +12,11 @@ interface EnvironmentOptions {
 }
 
 interface UploadProgressCallback {
-    (progress: Number | string, uploadedBytes: Number | null, totalBytes: Number | null): void
+    (progress: Number, uploadedBytes: Number | null, totalBytes: Number | null): void
 }
 
 interface DownloadProgressCallback {
-    (progress: Number | string, downloadedBytes: Number | null, totalBytes: Number | null): void
+    (progress: Number, downloadedBytes: Number | null, totalBytes: Number | null): void
 }
 
 interface UploadFinishedCallback {
@@ -39,7 +39,6 @@ interface ResolveFileOptions {
     overwritte?: boolean
 }
 
-
 interface BucketFormat {
     bucketId: string,
     decrypted: boolean,
@@ -48,7 +47,7 @@ interface BucketFormat {
 }
 
 interface FileFormat {
-    fileId: string,
+    id: string,
     size: Number,
     decrypted: boolean,
     type: string,
@@ -123,7 +122,7 @@ class Environment {
 
         // Possible outputs
         const uploadFailurePattern = /^Upload failure\:\s+(.*)/
-        const progressPattern = /^\[={0,}>\s+\]\s+(\d+\.\d+)%$/
+        const progressPattern = /^\[={0,}>?\s*\]\s+(\d+\.\d+)%$/
         const uploadSuccessPattern = /^Upload Success! File ID: ([a-z0-9]{24})$/
 
         // Process each line of output
@@ -141,8 +140,9 @@ class Environment {
 
             const isProgress = progressPattern.exec(ln)
             if (isProgress) {
+                let progressPercentage = parseFloat(isProgress[1]) / 100
                 if (typeof (options.progressCallback) === 'function') {
-                    options.progressCallback(isProgress[1], null, null)
+                    options.progressCallback(progressPercentage, null, null)
                 }
             }
         })
@@ -175,18 +175,32 @@ class Environment {
 
         const rl = readline.createInterface(storjExe.stdout)
 
-        const progressPattern = /^\[={0,}>\s+\]\s+(\d+\.\d+)%$/
+        // Output results
         let error: Error | null = null
 
+        // Possible outputs
+        const progressPattern = /^\[={0,}>?\s*\]\s+(\d+\.\d+)%$/
+        const downloadFailurePattern = /^Download failure: (.*)$/
+
         rl.on('line', (ln) => {
+
+            const downloadFailure = downloadFailurePattern.exec(ln)
+            if (downloadFailure) {
+                error = new Error(downloadFailure[1])
+                return rl.close()
+            }
+
+
             const isProgress = progressPattern.exec(ln)
             if (isProgress) {
-                if (typeof (options.progressCallback) == 'function') {
-                    options.progressCallback(isProgress[1], null, null)
+                let progressPercentage = parseFloat(isProgress[1]) / 100
+                if (typeof (options.progressCallback) === 'function') {
+                    options.progressCallback(progressPercentage, null, null)
                 }
-            } else if (ln == 'Download Success!') {
-                rl.close()
+                return;
             }
+
+
         });
 
         rl.on('close', () => {
@@ -231,7 +245,7 @@ class Environment {
         })
 
         rl.on('close', () => {
-            if (typeof (callback) == 'function') {
+            if (typeof (callback) === 'function') {
                 callback(error, results)
             }
         })
@@ -269,7 +283,7 @@ class Environment {
             const isFile = pattern.exec(ln)
             if (isFile) {
                 const file: FileFormat = {
-                    fileId: isFile[1],
+                    id: isFile[1],
                     size: parseInt(isFile[2]),
                     decrypted: isFile[3] === 'true',
                     type: isFile[4],

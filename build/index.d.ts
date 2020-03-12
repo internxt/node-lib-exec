@@ -5,10 +5,10 @@ interface EnvironmentOptions {
     encryptionKey: string;
 }
 interface UploadProgressCallback {
-    (progress: Number | string, uploadedBytes: Number | null, totalBytes: Number | null): void;
+    (progress: Number, uploadedBytes: Number | null, totalBytes: Number | null): void;
 }
 interface DownloadProgressCallback {
-    (progress: Number | string, downloadedBytes: Number | null, totalBytes: Number | null): void;
+    (progress: Number, downloadedBytes: Number | null, totalBytes: Number | null): void;
 }
 interface UploadFinishedCallback {
     (err: Error | null, newFileId: string | null): void;
@@ -33,7 +33,7 @@ interface BucketFormat {
     bucketName: string;
 }
 interface FileFormat {
-    fileId: string;
+    id: string;
     size: Number;
     decrypted: boolean;
     type: string;
