@@ -16,26 +16,29 @@ let fileId = ''
 
 describe('# constructor', () => {
 
+    it('should have network credentials', () => {
+        expect(storj.config.bridgeUser).not.equals('')
+        expect(storj.config.bridgePass).not.equals('')
+        expect(storj.config.encryptionKey).not.equals('')
+    })
+
     it('should error if delete file from non-existent bucket', function (done) {
         this.timeout(30000)
-        storj.removeFile('aaaaaaaaaaaaaaaaaaaaaaaa', '2912948b2bc135c0ff32ac5e', (err) => {
-            done(err ? null : err)
+        storj.removeFile('2912948b2bc135c0ff32ac5e', '2912948b2bc135c0ff32ac5e', (err) => {
+            expect(err).not.null
+            done()
         })
     })
 
     it('should create dummy file if not exists', function (done) {
-        if (fs.existsSync("pruebas.bin") && fs.statSync("pruebas.bin").size !== 0) { done() }
-        else {
-            if (fs.existsSync("pruebas.bin")) { fs.unlinkSync("pruebas.bin") }
-            const dummyFile = "http://ipv4.download.thinkbroadband.com/5MB.zip"
-            const file = fs.createWriteStream("pruebas.bin");
-            const request = http.get(dummyFile, function (response) {
-                response.pipe(file);
-            });
+        if (fs.existsSync("pruebas.bin")) { fs.unlinkSync("pruebas.bin") }
+        const dummyFile = "http://ipv4.download.thinkbroadband.com/5MB.zip"
+        const file = fs.createWriteStream("pruebas.bin");
+        const request = http.get(dummyFile, function (response) {
+            response.pipe(file);
+        });
 
-            request.on('finish', () => done())
-        }
-
+        request.on('finish', () => done())
     })
 
     it('should list buckets', function (done) {
@@ -53,12 +56,19 @@ describe('# constructor', () => {
             expect(err).to.be.null
             if (files.length) {
                 const filePruebas = files.filter(obj => obj.name === 'pruebas.bin')
-                if (filePruebas.length > 0 && filePruebas[0].fileId) {
-                    fileId = filePruebas[0].fileId
+                if (filePruebas.length > 0 && filePruebas[0].id) {
+                    fileId = filePruebas[0].id
                 }
             }
             done(err)
         })
+    })
+
+    it('should error if you try to list files of a non-existent bucket', () => {
+        storj.listFiles('aaaaaaaaaaaaaaaaaaaaaaaa', (err, files) => {
+            expect(err).not.null
+        })
+
     })
 
     it('should delete pruebas.bin if exists', function (done) {
@@ -78,6 +88,9 @@ describe('# constructor', () => {
                 expect(err).to.be.null
                 expect(fileId).to.match(/^[a-z0-9]{24}$/)
                 done(err)
+            },
+            progressCallback: (progress) => {
+                expect(progress >= 0 && progress <= 1).to.be.true
             }
         })
     })
@@ -85,11 +98,13 @@ describe('# constructor', () => {
     it('should download file', function (done) {
         this.timeout(300000)
 
-        storj.resolveFile('e6aa7b3ea8085ee5223c3d08', '025c9486deafce4cd3c91e64', './pruebas.bin', {
+        storj.resolveFile(bucketId, fileId, './pruebas.bin', {
             finishedCallback: (err) => {
                 done(err)
             },
-            progressCallback: (progress) => { /* do nothing */ },
+            progressCallback: (progress) => { 
+                expect(progress >= 0 && progress <= 1).to.be.true
+             },
             overwritte: true
         })
     })
