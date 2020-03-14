@@ -16,12 +16,12 @@ var Environment = /** @class */ (function () {
     }
     Environment.prototype.getExe = function () {
         var os = process.platform;
-        var pathExec = 'binaries/storj-' + os + '-' + process.arch;
-        pathExec = 'binaries/storj-' + os + '-x32';
+        var pathExec = path_1.default.join('binaries', 'storj-' + os + '-' + process.arch);
         pathExec = path_1.default.join(__dirname, '..', pathExec);
         if (os === 'win32') {
             pathExec += '.exe';
         }
+        pathExec = pathExec.replace('app.asar', 'app.asar.unpacked');
         return pathExec;
     };
     Environment.prototype.getOs = function () {

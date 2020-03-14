@@ -76,11 +76,10 @@ class Environment {
 
     private getExe() {
         const os = process.platform
-        let pathExec = 'binaries/storj-' + os + '-' + process.arch
-        pathExec = 'binaries/storj-' + os + '-x32'
+        let pathExec = path.join('binaries', 'storj-' + os + '-' + process.arch)
         pathExec = path.join(__dirname, '..', pathExec)
         if (os === 'win32') { pathExec += '.exe' }
-        pathExec = pathExec.replace('/app.asar/', '/app.asar.unpacked/')
+        pathExec = pathExec.replace('app.asar', 'app.asar.unpacked')
         return pathExec
     }
 
