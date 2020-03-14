@@ -36,9 +36,9 @@ interface FileFormat {
     id: string;
     size: Number;
     decrypted: boolean;
-    type: string;
+    mimetype: string;
     created: Date;
-    name: string;
+    filename: string;
 }
 interface ListBucketsCallback {
     (err: Error | null, bucketList: BucketFormat[]): void;

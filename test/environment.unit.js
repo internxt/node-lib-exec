@@ -55,7 +55,7 @@ describe('# constructor', () => {
         storj.listFiles(bucketId, (err, files) => {
             expect(err).to.be.null
             if (files.length) {
-                const filePruebas = files.filter(obj => obj.name === 'pruebas.bin')
+                const filePruebas = files.filter(obj => obj.filename === 'pruebas.bin')
                 if (filePruebas.length > 0 && filePruebas[0].id) {
                     fileId = filePruebas[0].id
                 }

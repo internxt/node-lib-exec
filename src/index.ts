@@ -50,9 +50,9 @@ interface FileFormat {
     id: string,
     size: Number,
     decrypted: boolean,
-    type: string,
+    mimetype: string,
     created: Date,
-    name: string
+    filename: string
 }
 
 interface ListBucketsCallback {
@@ -286,9 +286,9 @@ class Environment {
                     id: isFile[1],
                     size: parseInt(isFile[2]),
                     decrypted: isFile[3] === 'true',
-                    type: isFile[4],
+                    mimetype: isFile[4],
                     created: new Date(isFile[5]),
-                    name: isFile[6]
+                    filename: isFile[6]
                 }
                 return results.push(file)
 
