@@ -55,7 +55,7 @@ interface FileFormat {
     filename: string
 }
 
-interface ListBucketsCallback {
+interface GetBucketsCallback {
     (err: Error | null, bucketList: BucketFormat[]): void
 }
 
@@ -210,7 +210,7 @@ class Environment {
 
     }
 
-    listBuckets(callback: ListBucketsCallback) {
+    getBuckets(callback: GetBucketsCallback) {
         const storjExe = spawn(this.getExe(), ["list-buckets"], {
             env: {
                 STORJ_BRIDGE: this.config.bridgeUrl,

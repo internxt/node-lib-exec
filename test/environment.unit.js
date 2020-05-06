@@ -43,7 +43,7 @@ describe('# constructor', () => {
 
     it('should list buckets', function (done) {
         this.timeout(300000)
-        storj.listBuckets(function (err, buckets) {
+        storj.getBuckets(function (err, buckets) {
             expect(err).to.be.null
             bucketId = buckets[0].bucketId
             done(err)

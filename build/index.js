@@ -122,7 +122,7 @@ var Environment = /** @class */ (function () {
             options.finishedCallback(error);
         });
     };
-    Environment.prototype.listBuckets = function (callback) {
+    Environment.prototype.getBuckets = function (callback) {
         var storjExe = child_process_1.spawn(this.getExe(), ["list-buckets"], {
             env: {
                 STORJ_BRIDGE: this.config.bridgeUrl,

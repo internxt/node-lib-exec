@@ -40,7 +40,7 @@ interface FileFormat {
     created: Date;
     filename: string;
 }
-interface ListBucketsCallback {
+interface GetBucketsCallback {
     (err: Error | null, bucketList: BucketFormat[]): void;
 }
 interface ListFilesCallback {
@@ -54,7 +54,7 @@ declare class Environment {
     private fileExists;
     storeFile(bucketId: string, filePath: string, options: StoreFileOptions): void;
     resolveFile(bucketId: string, fileId: string, filePath: string, options: ResolveFileOptions): void;
-    listBuckets(callback: ListBucketsCallback): void;
+    getBuckets(callback: GetBucketsCallback): void;
     listFiles(bucketId: string, callback: ListFilesCallback): void;
     removeFile(bucketId: string, fileId: string, callback: OnlyErrorCallback): void;
 }
