@@ -124,9 +124,16 @@ class Environment {
         const uploadFailurePattern = /^Upload failure\:\s+(.*)/
         const progressPattern = /^\[={0,}>?\s*\]\s+(\d+\.\d+)%$/
         const uploadSuccessPattern = /^Upload Success! File ID: ([a-z0-9]{24})$/
+        const invalidFilePathPattern = /^Invalid file path: (.*)$/
 
         // Process each line of output
         rl.on('line', (ln) => {
+            const invalidFilePathFailure = invalidFilePathPattern.exec(ln)
+            if (invalidFilePathFailure) {
+                error = new Error(invalidFilePathFailure[1])
+                return rl.close()
+            }
+            
             const uploadFailure = uploadFailurePattern.exec(ln)
             if (uploadFailure) {
                 error = new Error(uploadFailure[1])

@@ -56,8 +56,14 @@ var Environment = /** @class */ (function () {
         var uploadFailurePattern = /^Upload failure\:\s+(.*)/;
         var progressPattern = /^\[={0,}>?\s*\]\s+(\d+\.\d+)%$/;
         var uploadSuccessPattern = /^Upload Success! File ID: ([a-z0-9]{24})$/;
+        var invalidFilePathPattern = /^Invalid file path: (.*)$/;
         // Process each line of output
         rl.on('line', function (ln) {
+            var invalidFilePathFailure = invalidFilePathPattern.exec(ln);
+            if (invalidFilePathFailure) {
+                error = new Error(invalidFilePathFailure[1]);
+                return rl.close();
+            }
             var uploadFailure = uploadFailurePattern.exec(ln);
             if (uploadFailure) {
                 error = new Error(uploadFailure[1]);
