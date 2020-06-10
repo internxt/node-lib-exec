@@ -130,7 +130,7 @@ class Environment {
         rl.on('line', (ln) => {
             const invalidFilePathFailure = invalidFilePathPattern.exec(ln)
             if (invalidFilePathFailure) {
-                error = new Error(invalidFilePathFailure[1])
+                error = new Error(invalidFilePathFailure[0])
                 return rl.close()
             }
             

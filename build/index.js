@@ -61,7 +61,7 @@ var Environment = /** @class */ (function () {
         rl.on('line', function (ln) {
             var invalidFilePathFailure = invalidFilePathPattern.exec(ln);
             if (invalidFilePathFailure) {
-                error = new Error(invalidFilePathFailure[1]);
+                error = new Error(invalidFilePathFailure[0]);
                 return rl.close();
             }
             var uploadFailure = uploadFailurePattern.exec(ln);
