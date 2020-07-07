@@ -2,13 +2,13 @@ const { Environment } = require('../')
 const fs = require('fs')
 const path = require('path')
 const expect = require('chai').expect
-
 const http = require('http')
+require('dotenv').config()
 
 const storj = new Environment({
-    bridgeUser: '',
-    bridgePass: '',
-    encryptionKey: ''
+    bridgeUser: process.env.TEST_BRIDGE_USER,
+    bridgePass: process.env.TEST_BRIDGE_PASS,
+    encryptionKey: process.env.TEST_BRIDGE_KEY
 })
 
 let bucketId = ''
