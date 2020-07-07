@@ -3,6 +3,7 @@ import fs from 'fs'
 import path from 'path'
 import { execFile, spawn } from 'child_process';
 import readline from 'readline'
+import os from 'os'
 
 interface EnvironmentOptions {
     bridgeUrl?: string,
@@ -106,6 +107,7 @@ class Environment {
         // Spawn child process, call to .EXE
         const storjExe = spawn(this.getExe(), ["upload-file", bucketId, filePath], {
             env: {
+                HOME: os.homedir(),
                 STORJ_BRIDGE: this.config.bridgeUrl,
                 STORJ_BRIDGE_USER: this.config.bridgeUser,
                 STORJ_BRIDGE_PASS: this.config.bridgePass,
@@ -173,6 +175,7 @@ class Environment {
 
         const storjExe = spawn(this.getExe(), ["download-file", bucketId, fileId, filePath], {
             env: {
+                HOME: os.homedir(),
                 STORJ_BRIDGE: this.config.bridgeUrl,
                 STORJ_BRIDGE_USER: this.config.bridgeUser,
                 STORJ_BRIDGE_PASS: this.config.bridgePass,
@@ -190,7 +193,6 @@ class Environment {
         const downloadFailurePattern = /^Download failure: (.*)$/
 
         rl.on('line', (ln) => {
-
             const downloadFailure = downloadFailurePattern.exec(ln)
             if (downloadFailure) {
                 error = new Error(downloadFailure[1])
@@ -220,6 +222,7 @@ class Environment {
     getBuckets(callback: GetBucketsCallback) {
         const storjExe = spawn(this.getExe(), ["list-buckets"], {
             env: {
+                HOME: os.homedir(),
                 STORJ_BRIDGE: this.config.bridgeUrl,
                 STORJ_BRIDGE_USER: this.config.bridgeUser,
                 STORJ_BRIDGE_PASS: this.config.bridgePass,
@@ -263,6 +266,7 @@ class Environment {
         // Spawn child process, call to .EXE
         const storjExe = spawn(this.getExe(), ["list-files", bucketId], {
             env: {
+                HOME: os.homedir(),
                 STORJ_BRIDGE: this.config.bridgeUrl,
                 STORJ_BRIDGE_USER: this.config.bridgeUser,
                 STORJ_BRIDGE_PASS: this.config.bridgePass,
@@ -313,6 +317,7 @@ class Environment {
     removeFile(bucketId: string, fileId: string, callback: OnlyErrorCallback) {
         const storjExe = spawn(this.getExe(), ["remove-file", bucketId, fileId], {
             env: {
+                HOME: os.homedir(),
                 STORJ_BRIDGE: this.config.bridgeUrl,
                 STORJ_BRIDGE_USER: this.config.bridgeUser,
                 STORJ_BRIDGE_PASS: this.config.bridgePass,

@@ -7,6 +7,7 @@ var fs_1 = __importDefault(require("fs"));
 var path_1 = __importDefault(require("path"));
 var child_process_1 = require("child_process");
 var readline_1 = __importDefault(require("readline"));
+var os_1 = __importDefault(require("os"));
 var Environment = /** @class */ (function () {
     function Environment(config) {
         if (!config.bridgeUrl) {
@@ -41,6 +42,7 @@ var Environment = /** @class */ (function () {
         // Spawn child process, call to .EXE
         var storjExe = child_process_1.spawn(this.getExe(), ["upload-file", bucketId, filePath], {
             env: {
+                HOME: os_1.default.homedir(),
                 STORJ_BRIDGE: this.config.bridgeUrl,
                 STORJ_BRIDGE_USER: this.config.bridgeUser,
                 STORJ_BRIDGE_PASS: this.config.bridgePass,
@@ -97,6 +99,7 @@ var Environment = /** @class */ (function () {
         }
         var storjExe = child_process_1.spawn(this.getExe(), ["download-file", bucketId, fileId, filePath], {
             env: {
+                HOME: os_1.default.homedir(),
                 STORJ_BRIDGE: this.config.bridgeUrl,
                 STORJ_BRIDGE_USER: this.config.bridgeUser,
                 STORJ_BRIDGE_PASS: this.config.bridgePass,
@@ -131,6 +134,7 @@ var Environment = /** @class */ (function () {
     Environment.prototype.getBuckets = function (callback) {
         var storjExe = child_process_1.spawn(this.getExe(), ["list-buckets"], {
             env: {
+                HOME: os_1.default.homedir(),
                 STORJ_BRIDGE: this.config.bridgeUrl,
                 STORJ_BRIDGE_USER: this.config.bridgeUser,
                 STORJ_BRIDGE_PASS: this.config.bridgePass,
@@ -167,6 +171,7 @@ var Environment = /** @class */ (function () {
         // Spawn child process, call to .EXE
         var storjExe = child_process_1.spawn(this.getExe(), ["list-files", bucketId], {
             env: {
+                HOME: os_1.default.homedir(),
                 STORJ_BRIDGE: this.config.bridgeUrl,
                 STORJ_BRIDGE_USER: this.config.bridgeUser,
                 STORJ_BRIDGE_PASS: this.config.bridgePass,
@@ -207,6 +212,7 @@ var Environment = /** @class */ (function () {
     Environment.prototype.removeFile = function (bucketId, fileId, callback) {
         var storjExe = child_process_1.spawn(this.getExe(), ["remove-file", bucketId, fileId], {
             env: {
+                HOME: os_1.default.homedir(),
                 STORJ_BRIDGE: this.config.bridgeUrl,
                 STORJ_BRIDGE_USER: this.config.bridgeUser,
                 STORJ_BRIDGE_PASS: this.config.bridgePass,
