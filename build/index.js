@@ -8,6 +8,7 @@ var path_1 = __importDefault(require("path"));
 var child_process_1 = require("child_process");
 var readline_1 = __importDefault(require("readline"));
 var os_1 = __importDefault(require("os"));
+var State_1 = require("./State");
 var Environment = /** @class */ (function () {
     function Environment(config) {
         if (!config.bridgeUrl) {
@@ -49,6 +50,7 @@ var Environment = /** @class */ (function () {
                 STORJ_ENCRYPTION_KEY: this.config.encryptionKey
             }
         });
+        var state = new State_1.State(storjExe);
         // Pipe the stdout steam to a readline interface
         var rl = readline_1.default.createInterface(storjExe.stdout);
         // Output results
@@ -87,6 +89,7 @@ var Environment = /** @class */ (function () {
         rl.on('close', function () {
             options.finishedCallback(error, result);
         });
+        return state;
     };
     Environment.prototype.resolveFile = function (bucketId, fileId, filePath, options) {
         if (fs_1.default.existsSync(filePath)) {
@@ -106,6 +109,7 @@ var Environment = /** @class */ (function () {
                 STORJ_ENCRYPTION_KEY: this.config.encryptionKey
             }
         });
+        var state = new State_1.State(storjExe);
         var rl = readline_1.default.createInterface(storjExe.stdout);
         // Output results
         var error = null;
@@ -130,6 +134,7 @@ var Environment = /** @class */ (function () {
         rl.on('close', function () {
             options.finishedCallback(error);
         });
+        return state;
     };
     Environment.prototype.getBuckets = function (callback) {
         var storjExe = child_process_1.spawn(this.getExe(), ["list-buckets"], {
@@ -238,6 +243,12 @@ var Environment = /** @class */ (function () {
         rl.on('close', function () {
             callback(error);
         });
+    };
+    Environment.prototype.resolveFileCancel = function (state) {
+        state.handler.kill();
+    };
+    Environment.prototype.storeFileCancel = function (state) {
+        state.handler.kill();
     };
     return Environment;
 }());

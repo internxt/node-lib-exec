@@ -31,14 +31,22 @@ describe('# constructor', () => {
     })
 
     it('should create dummy file if not exists', function (done) {
+        this.timeout(300000)
+        const next = done
         if (fs.existsSync("pruebas.bin")) { fs.unlinkSync("pruebas.bin") }
-        const dummyFile = "http://ipv4.download.thinkbroadband.com/5MB.zip"
+        const dummyFile = "http://www.s551963162.mialojamiento.es/50MB.zip"
         const file = fs.createWriteStream("pruebas.bin");
         const request = http.get(dummyFile, function (response) {
             response.pipe(file);
-        });
 
-        request.on('finish', () => done())
+            file.on('finish', () => {
+                file.close(() => {
+                    next()
+                })
+            })
+        }).on('error', (err) => {
+            next(err)
+        });
     })
 
     it('should list buckets', function (done) {
@@ -105,6 +113,23 @@ describe('# constructor', () => {
             progressCallback: (progress) => { 
                 expect(progress >= 0 && progress <= 1).to.be.true
              },
+            overwritte: true
+        })
+    })
+
+    it('should stop download', function (done) {
+        this.timeout(300000)
+
+        const state = storj.resolveFile(bucketId, fileId, './pruebas2.bin', {
+            finishedCallback: (err) => {
+                console.log('Download finished')
+                done()
+            },
+            progressCallback: (progress) => {
+                if (progress > 0.1) {
+                    state.handler.kill()
+                }
+            },
             overwritte: true
         })
     })

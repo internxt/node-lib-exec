@@ -4,6 +4,7 @@ import path from 'path'
 import { execFile, spawn } from 'child_process';
 import readline from 'readline'
 import os from 'os'
+import { State } from './State'
 
 interface EnvironmentOptions {
     bridgeUrl?: string,
@@ -93,7 +94,7 @@ class Environment {
         return x;
     }
 
-    storeFile(bucketId: string, filePath: string, options: StoreFileOptions) {
+    storeFile(bucketId: string, filePath: string, options: StoreFileOptions): State | void {
 
         if (!path.isAbsolute(filePath)) {
             return options.finishedCallback(new Error('Path must be absolute'), null)
@@ -114,6 +115,8 @@ class Environment {
                 STORJ_ENCRYPTION_KEY: this.config.encryptionKey
             }
         })
+
+        const state = new State(storjExe)
 
         // Pipe the stdout steam to a readline interface
         const rl = readline.createInterface(storjExe.stdout)
@@ -161,9 +164,11 @@ class Environment {
             options.finishedCallback(error, result)
         })
 
+        return state
+
     }
 
-    resolveFile(bucketId: string, fileId: string, filePath: string, options: ResolveFileOptions) {
+    resolveFile(bucketId: string, fileId: string, filePath: string, options: ResolveFileOptions): State | void {
 
         if (fs.existsSync(filePath)) {
             if (options.overwritte) {
@@ -182,6 +187,8 @@ class Environment {
                 STORJ_ENCRYPTION_KEY: this.config.encryptionKey
             }
         })
+
+        const state = new State(storjExe)
 
         const rl = readline.createInterface(storjExe.stdout)
 
@@ -215,6 +222,8 @@ class Environment {
         rl.on('close', () => {
             options.finishedCallback(error)
         })
+
+        return state
 
 
     }
@@ -353,7 +362,13 @@ class Environment {
 
     }
 
+    resolveFileCancel(state: State) {
+        state.handler.kill()
+    }
 
+    storeFileCancel(state: State) {
+        state.handler.kill()
+    }
 }
 
 export { Environment }

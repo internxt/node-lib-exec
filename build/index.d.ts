@@ -1,3 +1,4 @@
+import { State } from './State';
 interface EnvironmentOptions {
     bridgeUrl?: string;
     bridgeUser: string;
@@ -52,10 +53,12 @@ declare class Environment {
     private getExe;
     private getOs;
     private fileExists;
-    storeFile(bucketId: string, filePath: string, options: StoreFileOptions): void;
-    resolveFile(bucketId: string, fileId: string, filePath: string, options: ResolveFileOptions): void;
+    storeFile(bucketId: string, filePath: string, options: StoreFileOptions): State | void;
+    resolveFile(bucketId: string, fileId: string, filePath: string, options: ResolveFileOptions): State | void;
     getBuckets(callback: GetBucketsCallback): void;
     listFiles(bucketId: string, callback: ListFilesCallback): void;
     removeFile(bucketId: string, fileId: string, callback: OnlyErrorCallback): void;
+    resolveFileCancel(state: State): void;
+    storeFileCancel(state: State): void;
 }
 export { Environment };
