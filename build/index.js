@@ -18,7 +18,7 @@ var Environment = /** @class */ (function () {
     }
     Environment.prototype.getExe = function () {
         var os = process.platform;
-        var pathExec = path_1.default.join('binaries', 'storj-' + os + '-' + process.arch);
+        var pathExec = path_1.default.join('binaries', 'inxt-' + os + '-' + process.arch);
         pathExec = path_1.default.join(__dirname, '..', pathExec);
         if (os === 'win32') {
             pathExec += '.exe';
