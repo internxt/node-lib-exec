@@ -5,7 +5,7 @@ const expect = require('chai').expect
 const http = require('http')
 require('dotenv').config()
 
-const storj = new Environment({
+const inxt = new Environment({
     bridgeUser: process.env.TEST_BRIDGE_USER,
     bridgePass: process.env.TEST_BRIDGE_PASS,
     encryptionKey: process.env.TEST_BRIDGE_KEY
@@ -17,14 +17,14 @@ let fileId = ''
 describe('# constructor', () => {
 
     it('should have network credentials', () => {
-        expect(storj.config.bridgeUser).not.equals('')
-        expect(storj.config.bridgePass).not.equals('')
-        expect(storj.config.encryptionKey).not.equals('')
+        expect(inxt.config.bridgeUser).not.equals('')
+        expect(inxt.config.bridgePass).not.equals('')
+        expect(inxt.config.encryptionKey).not.equals('')
     })
 
     it('should error if delete file from non-existent bucket', function (done) {
         this.timeout(30000)
-        storj.removeFile('2912948b2bc135c0ff32ac5e', '2912948b2bc135c0ff32ac5e', (err) => {
+        inxt.removeFile('2912948b2bc135c0ff32ac5e', '2912948b2bc135c0ff32ac5e', (err) => {
             expect(err).not.null
             done()
         })
@@ -51,7 +51,7 @@ describe('# constructor', () => {
 
     it('should list buckets', function (done) {
         this.timeout(300000)
-        storj.getBuckets(function (err, buckets) {
+        inxt.getBuckets(function (err, buckets) {
             expect(err).to.be.null
             bucketId = buckets[0].bucketId
             done(err)
@@ -60,7 +60,7 @@ describe('# constructor', () => {
 
     it('should list files', function (done) {
         this.timeout(30000)
-        storj.listFiles(bucketId, (err, files) => {
+        inxt.listFiles(bucketId, (err, files) => {
             expect(err).to.be.null
             if (files.length) {
                 const filePruebas = files.filter(obj => obj.filename === 'pruebas.bin')
@@ -73,7 +73,7 @@ describe('# constructor', () => {
     })
 
     it('should error if you try to list files of a non-existent bucket', () => {
-        storj.listFiles('aaaaaaaaaaaaaaaaaaaaaaaa', (err, files) => {
+        inxt.listFiles('aaaaaaaaaaaaaaaaaaaaaaaa', (err, files) => {
             expect(err).not.null
         })
 
@@ -84,14 +84,14 @@ describe('# constructor', () => {
             return done()
         }
         this.timeout(30000)
-        storj.removeFile(bucketId, fileId, (err) => done(err))
+        inxt.removeFile(bucketId, fileId, (err) => done(err))
     })
 
 
     it('should upload file', function (done) {
         this.timeout(300000)
         const absolutePath = path.resolve('pruebas.bin')
-        storj.storeFile(bucketId, absolutePath, {
+        inxt.storeFile(bucketId, absolutePath, {
             finishedCallback: (err, fileId) => {
                 expect(err).to.be.null
                 expect(fileId).to.match(/^[a-z0-9]{24}$/)
@@ -106,7 +106,7 @@ describe('# constructor', () => {
     it('should download file', function (done) {
         this.timeout(300000)
 
-        storj.resolveFile(bucketId, fileId, './pruebas.bin', {
+        inxt.resolveFile(bucketId, fileId, './pruebas.bin', {
             finishedCallback: (err) => {
                 done(err)
             },
@@ -120,7 +120,7 @@ describe('# constructor', () => {
     it('should stop download', function (done) {
         this.timeout(300000)
 
-        const state = storj.resolveFile(bucketId, fileId, './pruebas2.bin', {
+        const state = inxt.resolveFile(bucketId, fileId, './pruebas2.bin', {
             finishedCallback: (err) => {
                 console.log('Download finished')
                 done()
