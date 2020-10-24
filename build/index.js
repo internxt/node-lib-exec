@@ -3,6 +3,7 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
     return (mod && mod.__esModule) ? mod : { "default": mod };
 };
 Object.defineProperty(exports, "__esModule", { value: true });
+exports.Environment = void 0;
 var fs_1 = __importDefault(require("fs"));
 var path_1 = __importDefault(require("path"));
 var child_process_1 = require("child_process");
@@ -33,6 +34,10 @@ var Environment = /** @class */ (function () {
         var x = fs_1.default.existsSync(this.getExe());
         return x;
     };
+    Environment.prototype.exeSpawn = function (command, args, options) {
+        fs_1.default.accessSync(command, fs_1.default.constants.X_OK);
+        return child_process_1.spawn(command, args, options);
+    };
     Environment.prototype.storeFile = function (bucketId, filePath, options) {
         if (!path_1.default.isAbsolute(filePath)) {
             return options.finishedCallback(new Error('Path must be absolute'), null);
@@ -41,7 +46,7 @@ var Environment = /** @class */ (function () {
             return options.finishedCallback(new Error('Cannot upload file: Doesn\'t exists'), null);
         }
         // Spawn child process, call to .EXE
-        var storjExe = child_process_1.spawn(this.getExe(), ["upload-file", bucketId, filePath], {
+        var storjExe = this.exeSpawn(this.getExe(), ["upload-file", bucketId, filePath], {
             env: {
                 HOME: os_1.default.homedir(),
                 STORJ_BRIDGE: this.config.bridgeUrl,
@@ -100,7 +105,7 @@ var Environment = /** @class */ (function () {
                 return options.finishedCallback(new Error('File already exists'));
             }
         }
-        var storjExe = child_process_1.spawn(this.getExe(), ["download-file", bucketId, fileId, filePath], {
+        var storjExe = this.exeSpawn(this.getExe(), ["download-file", bucketId, fileId, filePath], {
             env: {
                 HOME: os_1.default.homedir(),
                 STORJ_BRIDGE: this.config.bridgeUrl,
@@ -137,7 +142,7 @@ var Environment = /** @class */ (function () {
         return state;
     };
     Environment.prototype.getBuckets = function (callback) {
-        var storjExe = child_process_1.spawn(this.getExe(), ["list-buckets"], {
+        var storjExe = this.exeSpawn(this.getExe(), ["list-buckets"], {
             env: {
                 HOME: os_1.default.homedir(),
                 STORJ_BRIDGE: this.config.bridgeUrl,
@@ -174,7 +179,7 @@ var Environment = /** @class */ (function () {
     };
     Environment.prototype.listFiles = function (bucketId, callback) {
         // Spawn child process, call to .EXE
-        var storjExe = child_process_1.spawn(this.getExe(), ["list-files", bucketId], {
+        var storjExe = this.exeSpawn(this.getExe(), ["list-files", bucketId], {
             env: {
                 HOME: os_1.default.homedir(),
                 STORJ_BRIDGE: this.config.bridgeUrl,
@@ -215,7 +220,7 @@ var Environment = /** @class */ (function () {
         });
     };
     Environment.prototype.removeFile = function (bucketId, fileId, callback) {
-        var storjExe = child_process_1.spawn(this.getExe(), ["remove-file", bucketId, fileId], {
+        var storjExe = this.exeSpawn(this.getExe(), ["remove-file", bucketId, fileId], {
             env: {
                 HOME: os_1.default.homedir(),
                 STORJ_BRIDGE: this.config.bridgeUrl,

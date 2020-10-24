@@ -1,7 +1,7 @@
 
 import fs from 'fs'
 import path from 'path'
-import { execFile, spawn } from 'child_process';
+import { spawn, SpawnOptionsWithoutStdio } from 'child_process';
 import readline from 'readline'
 import os from 'os'
 import { State } from './State'
@@ -94,6 +94,11 @@ class Environment {
         return x;
     }
 
+    exeSpawn(command: string, args: string[], options: SpawnOptionsWithoutStdio) {
+        fs.accessSync(command, fs.constants.X_OK)
+        return spawn(command, args, options)
+    }
+
     storeFile(bucketId: string, filePath: string, options: StoreFileOptions): State | void {
 
         if (!path.isAbsolute(filePath)) {
@@ -106,7 +111,7 @@ class Environment {
 
 
         // Spawn child process, call to .EXE
-        const storjExe = spawn(this.getExe(), ["upload-file", bucketId, filePath], {
+        const storjExe = this.exeSpawn(this.getExe(), ["upload-file", bucketId, filePath], {
             env: {
                 HOME: os.homedir(),
                 STORJ_BRIDGE: this.config.bridgeUrl,
@@ -178,7 +183,7 @@ class Environment {
             }
         }
 
-        const storjExe = spawn(this.getExe(), ["download-file", bucketId, fileId, filePath], {
+        const storjExe = this.exeSpawn(this.getExe(), ["download-file", bucketId, fileId, filePath], {
             env: {
                 HOME: os.homedir(),
                 STORJ_BRIDGE: this.config.bridgeUrl,
@@ -229,7 +234,7 @@ class Environment {
     }
 
     getBuckets(callback: GetBucketsCallback) {
-        const storjExe = spawn(this.getExe(), ["list-buckets"], {
+        const storjExe = this.exeSpawn(this.getExe(), ["list-buckets"], {
             env: {
                 HOME: os.homedir(),
                 STORJ_BRIDGE: this.config.bridgeUrl,
@@ -273,7 +278,7 @@ class Environment {
 
     listFiles(bucketId: string, callback: ListFilesCallback) {
         // Spawn child process, call to .EXE
-        const storjExe = spawn(this.getExe(), ["list-files", bucketId], {
+        const storjExe = this.exeSpawn(this.getExe(), ["list-files", bucketId], {
             env: {
                 HOME: os.homedir(),
                 STORJ_BRIDGE: this.config.bridgeUrl,
@@ -324,7 +329,7 @@ class Environment {
     }
 
     removeFile(bucketId: string, fileId: string, callback: OnlyErrorCallback) {
-        const storjExe = spawn(this.getExe(), ["remove-file", bucketId, fileId], {
+        const storjExe = this.exeSpawn(this.getExe(), ["remove-file", bucketId, fileId], {
             env: {
                 HOME: os.homedir(),
                 STORJ_BRIDGE: this.config.bridgeUrl,

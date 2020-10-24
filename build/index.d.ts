@@ -1,3 +1,5 @@
+/// <reference types="node" />
+import { SpawnOptionsWithoutStdio } from 'child_process';
 import { State } from './State';
 interface EnvironmentOptions {
     bridgeUrl?: string;
@@ -53,6 +55,7 @@ declare class Environment {
     private getExe;
     private getOs;
     private fileExists;
+    exeSpawn(command: string, args: string[], options: SpawnOptionsWithoutStdio): import("child_process").ChildProcessWithoutNullStreams;
     storeFile(bucketId: string, filePath: string, options: StoreFileOptions): State | void;
     resolveFile(bucketId: string, fileId: string, filePath: string, options: ResolveFileOptions): State | void;
     getBuckets(callback: GetBucketsCallback): void;
