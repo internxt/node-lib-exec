@@ -23,11 +23,13 @@ interface StoreFileOptions {
     filename: string;
     progressCallback: UploadProgressCallback;
     finishedCallback: UploadFinishedCallback;
+    debug?: (message: string) => void;
 }
 interface ResolveFileOptions {
     progressCallback: DownloadProgressCallback;
     finishedCallback: OnlyErrorCallback;
     overwritte?: boolean;
+    debug?: (message: string) => void;
 }
 interface BucketFormat {
     bucketId: string;

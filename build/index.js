@@ -68,6 +68,9 @@ var Environment = /** @class */ (function () {
         var invalidFilePathPattern = /^Invalid file path: (.*)$/;
         // Process each line of output
         rl.on('line', function (ln) {
+            if (options.debug) {
+                options.debug(ln);
+            }
             var invalidFilePathFailure = invalidFilePathPattern.exec(ln);
             if (invalidFilePathFailure) {
                 error = new Error(invalidFilePathFailure[0]);
@@ -122,6 +125,9 @@ var Environment = /** @class */ (function () {
         var progressPattern = /^\[={0,}>?\s*\]\s+(\d+\.\d+)%$/;
         var downloadFailurePattern = /^Download failure: (.*)$/;
         rl.on('line', function (ln) {
+            if (options.debug) {
+                options.debug(ln);
+            }
             var downloadFailure = downloadFailurePattern.exec(ln);
             if (downloadFailure) {
                 error = new Error(downloadFailure[1]);

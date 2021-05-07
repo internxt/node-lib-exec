@@ -32,13 +32,15 @@ interface OnlyErrorCallback {
 interface StoreFileOptions {
     filename: string,
     progressCallback: UploadProgressCallback,
-    finishedCallback: UploadFinishedCallback
+    finishedCallback: UploadFinishedCallback,
+    debug?: (message: string) => void
 }
 
 interface ResolveFileOptions {
     progressCallback: DownloadProgressCallback,
     finishedCallback: OnlyErrorCallback,
     overwritte?: boolean
+    debug?: (message: string) => void
 }
 
 interface BucketFormat {
@@ -138,12 +140,15 @@ class Environment {
 
         // Process each line of output
         rl.on('line', (ln) => {
+            if (options.debug) {
+                options.debug(ln);
+            }
             const invalidFilePathFailure = invalidFilePathPattern.exec(ln)
             if (invalidFilePathFailure) {
                 error = new Error(invalidFilePathFailure[0])
                 return rl.close()
             }
-            
+
             const uploadFailure = uploadFailurePattern.exec(ln)
             if (uploadFailure) {
                 error = new Error(uploadFailure[1])
@@ -205,6 +210,10 @@ class Environment {
         const downloadFailurePattern = /^Download failure: (.*)$/
 
         rl.on('line', (ln) => {
+            if (options.debug) {
+                options.debug(ln);
+            }
+
             const downloadFailure = downloadFailurePattern.exec(ln)
             if (downloadFailure) {
                 error = new Error(downloadFailure[1])
