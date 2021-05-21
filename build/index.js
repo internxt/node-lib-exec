@@ -56,11 +56,15 @@ var Environment = /** @class */ (function () {
             }
         });
         var state = new State_1.State(storjExe);
-        // Pipe the stdout steam to a readline interface
-        var rl = readline_1.default.createInterface(storjExe.stdout);
         // Output results
         var result = null;
         var error = null;
+        state.handler.on('kill', function () {
+            error = new Error('Process killed by user');
+            state.handler.kill();
+        });
+        // Pipe the stdout steam to a readline interface
+        var rl = readline_1.default.createInterface(storjExe.stdout);
         // Possible outputs
         var uploadFailurePattern = /^Upload failure\:\s+(.*)/;
         var progressPattern = /^\[={0,}>?\s*\]\s+(\d+\.\d+)%$/;
@@ -95,7 +99,12 @@ var Environment = /** @class */ (function () {
         });
         // Manage closed stream
         rl.on('close', function () {
-            options.finishedCallback(error, result);
+            if (!error && !result) {
+                options.finishedCallback(new Error('Unexpected process finish'), null);
+            }
+            else {
+                options.finishedCallback(error, result);
+            }
         });
         return state;
     };
@@ -118,9 +127,13 @@ var Environment = /** @class */ (function () {
             }
         });
         var state = new State_1.State(storjExe);
-        var rl = readline_1.default.createInterface(storjExe.stdout);
         // Output results
         var error = null;
+        state.handler.on('kill', function () {
+            error = new Error('Process killed by user');
+            state.handler.kill();
+        });
+        var rl = readline_1.default.createInterface(storjExe.stdout);
         // Possible outputs
         var progressPattern = /^\[={0,}>?\s*\]\s+(\d+\.\d+)%$/;
         var downloadFailurePattern = /^Download failure: (.*)$/;
@@ -256,10 +269,10 @@ var Environment = /** @class */ (function () {
         });
     };
     Environment.prototype.resolveFileCancel = function (state) {
-        state.handler.kill();
+        state.handler.emit('kill');
     };
     Environment.prototype.storeFileCancel = function (state) {
-        state.handler.kill();
+        state.handler.emit('kill');
     };
     return Environment;
 }());

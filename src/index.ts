@@ -125,12 +125,17 @@ class Environment {
 
         const state = new State(storjExe)
 
-        // Pipe the stdout steam to a readline interface
-        const rl = readline.createInterface(storjExe.stdout)
-
         // Output results
         let result: string | null = null
         let error: Error | null = null
+        
+        state.handler.on('kill', () => {
+            error = new Error('Process killed by user')
+            state.handler.kill();
+        })
+
+        // Pipe the stdout steam to a readline interface
+        const rl = readline.createInterface(storjExe.stdout)
 
         // Possible outputs
         const uploadFailurePattern = /^Upload failure\:\s+(.*)/
@@ -171,7 +176,11 @@ class Environment {
 
         // Manage closed stream
         rl.on('close', () => {
-            options.finishedCallback(error, result)
+            if (!error && !result) {
+                options.finishedCallback(new Error('Unexpected process finish'), null);
+            } else {
+                options.finishedCallback(error, result)
+            }
         })
 
         return state
@@ -200,10 +209,15 @@ class Environment {
 
         const state = new State(storjExe)
 
-        const rl = readline.createInterface(storjExe.stdout)
-
         // Output results
         let error: Error | null = null
+
+        state.handler.on('kill', () => {
+            error = new Error('Process killed by user');
+            state.handler.kill()
+        })
+
+        const rl = readline.createInterface(storjExe.stdout)
 
         // Possible outputs
         const progressPattern = /^\[={0,}>?\s*\]\s+(\d+\.\d+)%$/
@@ -238,8 +252,6 @@ class Environment {
         })
 
         return state
-
-
     }
 
     getBuckets(callback: GetBucketsCallback) {
@@ -377,11 +389,11 @@ class Environment {
     }
 
     resolveFileCancel(state: State) {
-        state.handler.kill()
+        state.handler.emit('kill');
     }
 
     storeFileCancel(state: State) {
-        state.handler.kill()
+        state.handler.emit('kill');
     }
 }
 
