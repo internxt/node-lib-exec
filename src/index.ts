@@ -102,7 +102,6 @@ class Environment {
     }
 
     storeFile(bucketId: string, filePath: string, options: StoreFileOptions): State | void {
-
         if (!path.isAbsolute(filePath)) {
             return options.finishedCallback(new Error('Path must be absolute'), null)
         }
@@ -125,14 +124,16 @@ class Environment {
 
         const state = new State(storjExe)
 
+
         // Output results
         let result: string | null = null
         let error: Error | null = null
-        
-        state.handler.on('kill', () => {
+
+        storjExe.on('kill', () => {
             error = new Error('Process killed by user')
-            state.handler.kill();
+            storjExe.kill();
         })
+
 
         // Pipe the stdout steam to a readline interface
         const rl = readline.createInterface(storjExe.stdout)
@@ -143,11 +144,21 @@ class Environment {
         const uploadSuccessPattern = /^Upload Success! File ID: ([a-z0-9]{24})$/
         const invalidFilePathPattern = /^Invalid file path: (.*)$/
 
+        let timer: NodeJS.Timeout = setTimeout(() => {
+            error = new Error('Node-lib timeout');
+            storjExe.kill()
+        }, 60 * 3 * 1000)
+
         // Process each line of output
         rl.on('line', (ln) => {
+            clearTimeout(timer)
             if (options.debug) {
-                options.debug(ln);
+                options.debug(ln)
             }
+            timer = setTimeout(() => {
+                error = new Error('Node-lib timeout');
+                storjExe.kill()
+            }, 60 * 3 * 1000)
             const invalidFilePathFailure = invalidFilePathPattern.exec(ln)
             if (invalidFilePathFailure) {
                 error = new Error(invalidFilePathFailure[0])
@@ -172,10 +183,12 @@ class Environment {
                     options.progressCallback(progressPercentage, null, null)
                 }
             }
+
         })
 
         // Manage closed stream
         rl.on('close', () => {
+            clearTimeout(timer)
             if (!error && !result) {
                 options.finishedCallback(new Error('Unexpected process finish'), null);
             } else {
@@ -223,11 +236,19 @@ class Environment {
         const progressPattern = /^\[={0,}>?\s*\]\s+(\d+\.\d+)%$/
         const downloadFailurePattern = /^Download failure: (.*)$/
 
+        let timer: NodeJS.Timeout = setTimeout(() => {
+            error = new Error('Node-lib timeout');
+            storjExe.kill()
+        }, 60 * 3 * 1000)
         rl.on('line', (ln) => {
+            clearTimeout(timer)
             if (options.debug) {
                 options.debug(ln);
             }
-
+            timer = setTimeout(() => {
+                error = new Error('Node-lib timeout');
+                storjExe.kill()
+            }, 60 * 3 * 1000)
             const downloadFailure = downloadFailurePattern.exec(ln)
             if (downloadFailure) {
                 error = new Error(downloadFailure[1])
@@ -248,6 +269,7 @@ class Environment {
         });
 
         rl.on('close', () => {
+            clearTimeout(timer)
             options.finishedCallback(error)
         })
 

@@ -59,9 +59,9 @@ var Environment = /** @class */ (function () {
         // Output results
         var result = null;
         var error = null;
-        state.handler.on('kill', function () {
+        storjExe.on('kill', function () {
             error = new Error('Process killed by user');
-            state.handler.kill();
+            storjExe.kill();
         });
         // Pipe the stdout steam to a readline interface
         var rl = readline_1.default.createInterface(storjExe.stdout);
@@ -70,11 +70,20 @@ var Environment = /** @class */ (function () {
         var progressPattern = /^\[={0,}>?\s*\]\s+(\d+\.\d+)%$/;
         var uploadSuccessPattern = /^Upload Success! File ID: ([a-z0-9]{24})$/;
         var invalidFilePathPattern = /^Invalid file path: (.*)$/;
+        var timer = setTimeout(function () {
+            error = new Error('Node-lib timeout');
+            storjExe.kill();
+        }, 60 * 3 * 1000);
         // Process each line of output
         rl.on('line', function (ln) {
+            clearTimeout(timer);
             if (options.debug) {
                 options.debug(ln);
             }
+            timer = setTimeout(function () {
+                error = new Error('Node-lib timeout');
+                storjExe.kill();
+            }, 60 * 3 * 1000);
             var invalidFilePathFailure = invalidFilePathPattern.exec(ln);
             if (invalidFilePathFailure) {
                 error = new Error(invalidFilePathFailure[0]);
@@ -99,6 +108,7 @@ var Environment = /** @class */ (function () {
         });
         // Manage closed stream
         rl.on('close', function () {
+            clearTimeout(timer);
             if (!error && !result) {
                 options.finishedCallback(new Error('Unexpected process finish'), null);
             }
@@ -137,10 +147,19 @@ var Environment = /** @class */ (function () {
         // Possible outputs
         var progressPattern = /^\[={0,}>?\s*\]\s+(\d+\.\d+)%$/;
         var downloadFailurePattern = /^Download failure: (.*)$/;
+        var timer = setTimeout(function () {
+            error = new Error('Node-lib timeout');
+            storjExe.kill();
+        }, 60 * 3 * 1000);
         rl.on('line', function (ln) {
+            clearTimeout(timer);
             if (options.debug) {
                 options.debug(ln);
             }
+            timer = setTimeout(function () {
+                error = new Error('Node-lib timeout');
+                storjExe.kill();
+            }, 60 * 3 * 1000);
             var downloadFailure = downloadFailurePattern.exec(ln);
             if (downloadFailure) {
                 error = new Error(downloadFailure[1]);
@@ -156,6 +175,7 @@ var Environment = /** @class */ (function () {
             }
         });
         rl.on('close', function () {
+            clearTimeout(timer);
             options.finishedCallback(error);
         });
         return state;
