@@ -70,20 +70,19 @@ var Environment = /** @class */ (function () {
         var progressPattern = /^\[={0,}>?\s*\]\s+(\d+\.\d+)%$/;
         var uploadSuccessPattern = /^Upload Success! File ID: ([a-z0-9]{24})$/;
         var invalidFilePathPattern = /^Invalid file path: (.*)$/;
-        var timer = setTimeout(function () {
-            error = new Error('Node-lib timeout');
-            storjExe.kill();
-        }, 60 * 3 * 1000);
+        var timer;
         // Process each line of output
         rl.on('line', function (ln) {
             clearTimeout(timer);
             if (options.debug) {
                 options.debug(ln);
             }
-            timer = setTimeout(function () {
-                error = new Error('Node-lib timeout');
-                storjExe.kill();
-            }, 60 * 3 * 1000);
+            if (timer) {
+                timer = setTimeout(function () {
+                    error = new Error('Node-lib timeout');
+                    storjExe.kill();
+                }, 60 * 3 * 1000);
+            }
             var invalidFilePathFailure = invalidFilePathPattern.exec(ln);
             if (invalidFilePathFailure) {
                 error = new Error(invalidFilePathFailure[0]);
@@ -100,6 +99,12 @@ var Environment = /** @class */ (function () {
             }
             var isProgress = progressPattern.exec(ln);
             if (isProgress) {
+                if (!timer) {
+                    timer = setTimeout(function () {
+                        error = new Error('Node-lib timeout');
+                        storjExe.kill();
+                    }, 60 * 3 * 1000);
+                }
                 var progressPercentage = parseFloat(isProgress[1]) / 100;
                 if (typeof (options.progressCallback) === 'function') {
                     options.progressCallback(progressPercentage, null, null);
@@ -147,19 +152,18 @@ var Environment = /** @class */ (function () {
         // Possible outputs
         var progressPattern = /^\[={0,}>?\s*\]\s+(\d+\.\d+)%$/;
         var downloadFailurePattern = /^Download failure: (.*)$/;
-        var timer = setTimeout(function () {
-            error = new Error('Node-lib timeout');
-            storjExe.kill();
-        }, 60 * 3 * 1000);
+        var timer;
         rl.on('line', function (ln) {
             clearTimeout(timer);
             if (options.debug) {
                 options.debug(ln);
             }
-            timer = setTimeout(function () {
-                error = new Error('Node-lib timeout');
-                storjExe.kill();
-            }, 60 * 3 * 1000);
+            if (timer) {
+                timer = setTimeout(function () {
+                    error = new Error('Node-lib timeout');
+                    storjExe.kill();
+                }, 60 * 3 * 1000);
+            }
             var downloadFailure = downloadFailurePattern.exec(ln);
             if (downloadFailure) {
                 error = new Error(downloadFailure[1]);
@@ -167,6 +171,12 @@ var Environment = /** @class */ (function () {
             }
             var isProgress = progressPattern.exec(ln);
             if (isProgress) {
+                if (!timer) {
+                    timer = setTimeout(function () {
+                        error = new Error('Node-lib timeout');
+                        storjExe.kill();
+                    }, 60 * 3 * 1000);
+                }
                 var progressPercentage = parseFloat(isProgress[1]) / 100;
                 if (typeof (options.progressCallback) === 'function') {
                     options.progressCallback(progressPercentage, null, null);

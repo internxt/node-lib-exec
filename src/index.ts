@@ -144,10 +144,7 @@ class Environment {
         const uploadSuccessPattern = /^Upload Success! File ID: ([a-z0-9]{24})$/
         const invalidFilePathPattern = /^Invalid file path: (.*)$/
 
-        let timer: NodeJS.Timeout = setTimeout(() => {
-            error = new Error('Node-lib timeout');
-            storjExe.kill()
-        }, 60 * 3 * 1000)
+        let timer: NodeJS.Timeout
 
         // Process each line of output
         rl.on('line', (ln) => {
@@ -155,10 +152,12 @@ class Environment {
             if (options.debug) {
                 options.debug(ln)
             }
-            timer = setTimeout(() => {
-                error = new Error('Node-lib timeout');
-                storjExe.kill()
-            }, 60 * 3 * 1000)
+            if(timer) {
+                timer = setTimeout(() => {
+                    error = new Error('Node-lib timeout');
+                    storjExe.kill()
+                }, 60 * 3 * 1000)
+            }
             const invalidFilePathFailure = invalidFilePathPattern.exec(ln)
             if (invalidFilePathFailure) {
                 error = new Error(invalidFilePathFailure[0])
@@ -178,6 +177,12 @@ class Environment {
 
             const isProgress = progressPattern.exec(ln)
             if (isProgress) {
+                if(!timer) {
+                    timer = setTimeout(() => {
+                        error = new Error('Node-lib timeout');
+                        storjExe.kill()
+                    }, 60 * 3 * 1000)
+                }
                 let progressPercentage = parseFloat(isProgress[1]) / 100
                 if (typeof (options.progressCallback) === 'function') {
                     options.progressCallback(progressPercentage, null, null)
@@ -236,28 +241,32 @@ class Environment {
         const progressPattern = /^\[={0,}>?\s*\]\s+(\d+\.\d+)%$/
         const downloadFailurePattern = /^Download failure: (.*)$/
 
-        let timer: NodeJS.Timeout = setTimeout(() => {
-            error = new Error('Node-lib timeout');
-            storjExe.kill()
-        }, 60 * 3 * 1000)
+        let timer: NodeJS.Timeout
         rl.on('line', (ln) => {
             clearTimeout(timer)
             if (options.debug) {
                 options.debug(ln);
             }
-            timer = setTimeout(() => {
-                error = new Error('Node-lib timeout');
-                storjExe.kill()
-            }, 60 * 3 * 1000)
+            if(timer) {
+                timer = setTimeout(() => {
+                    error = new Error('Node-lib timeout');
+                    storjExe.kill()
+                }, 60 * 3 * 1000)
+            }
             const downloadFailure = downloadFailurePattern.exec(ln)
             if (downloadFailure) {
                 error = new Error(downloadFailure[1])
                 return rl.close()
             }
 
-
             const isProgress = progressPattern.exec(ln)
             if (isProgress) {
+                if(!timer) {
+                    timer = setTimeout(() => {
+                        error = new Error('Node-lib timeout');
+                        storjExe.kill()
+                    }, 60 * 3 * 1000)
+                }
                 let progressPercentage = parseFloat(isProgress[1]) / 100
                 if (typeof (options.progressCallback) === 'function') {
                     options.progressCallback(progressPercentage, null, null)
